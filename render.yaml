@@ -1,0 +1,27 @@
+# Render Blueprint: Dashboard -> New -> Blueprint -> pick this repository.
+# Values marked "sync: false" are asked for in the dashboard (they're secrets,
+# never committed). See README -> "Deploy with a permanent URL".
+services:
+  - type: web
+    name: forward-it
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: TIMEZONE
+        value: Asia/Kolkata
+      - key: GROQ_API_KEY
+        sync: false
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_WHATSAPP_FROM
+        value: whatsapp:+14155238886
+      - key: TWILIO_SANDBOX_CODE
+        sync: false
