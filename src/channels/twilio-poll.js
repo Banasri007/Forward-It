@@ -36,11 +36,11 @@ export async function pollOnce(startedAt) {
   const { messages = [] } = await res.json();
 
   // Twilio lists newest first; answer in the order people sent them.
-  const fresh = messages.filter((m) => m.direction === "inbound" && !store.seenTwilioMessage(m.sid)).reverse();
+  const fresh = messages.filter((m) => m.direction === "inbound" && !store.seenMessage(m.sid)).reverse();
   let handled = 0;
   for (const message of fresh) {
     if (Date.parse(message.date_created) < startedAt - CATCH_UP_MS) {
-      store.markTwilioMessage(message.sid);
+      store.markMessage(message.sid);
       continue;
     }
     const media = Number(message.num_media) > 0 ? await mediaFor(message) : [];

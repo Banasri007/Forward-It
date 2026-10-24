@@ -61,12 +61,26 @@ export const config = {
     sandboxCode: setting(env.TWILIO_SANDBOX_CODE).replace(/^(?!join\s)(?=\S)/i, "join "),
   },
 
+  // This server's public address, for showing webhook URLs (Render sets RENDER_EXTERNAL_URL itself).
+  publicBaseUrl: (setting(env.PUBLIC_URL) || setting(env.RENDER_EXTERNAL_URL)).replace(/\/+$/, ""),
+
+  // Meta's WhatsApp Cloud API: real two-way WhatsApp (needs a public HTTPS URL for its webhook).
+  meta: {
+    accessToken: setting(env.META_ACCESS_TOKEN),
+    phoneNumberId: setting(env.META_PHONE_NUMBER_ID),
+    appSecret: setting(env.META_APP_SECRET),
+    verifyToken: setting(env.META_VERIFY_TOKEN),
+    displayNumber: setting(env.META_DISPLAY_NUMBER), // e.g. +1 555 123 4567, shown on the website
+    graphVersion: setting(env.META_GRAPH_VERSION) || "v23.0",
+  },
+
   // When reminders and the morning summary go out (local time).
   eveningReminder: { hour: 20, minute: 0 },
   morningDigest: { hour: 7, minute: 30, until: 11 },
 };
 
 export const twilioConfigured = Boolean(config.twilio.accountSid && config.twilio.authToken);
+export const metaConfigured = Boolean(config.meta.accessToken && config.meta.phoneNumberId);
 
 /**
  * How WhatsApp messages reach us: "poll" (ask Twilio every few seconds; no

@@ -38,6 +38,8 @@ const STRINGS = {
     shareInvite: ({ name }) =>
       `👋 *${name}* added you to their Forward-It family list. You'll get reminders for shared tasks too.\nReply *LIST* to see them, or *LEAVE* to stop.`,
     shareSandboxNote: () => "_(On the test number, they first need to send the sandbox join code to this number, or they won't get messages.)_",
+    shareMetaNote: () => "_(On a test number, their number must be on the allowed list in the Meta app, and they should send this number any message once.)_",
+    unsupportedMessage: () => "🙂 I can read text, photos, PDFs and voice notes. Stickers, videos and locations aren't something I can turn into reminders yet.",
     shareSelf: () => "That's your own number 🙂 Send *SHARE* followed by your family member's number.",
     familyList: ({ names }) => `👨‍👩‍👧 *Your family list:* ${names}`,
     familyAlone: () => "👤 It's just you for now. Send *SHARE +91XXXXXXXXXX* to add a family member.",
@@ -101,6 +103,8 @@ const STRINGS = {
     shareInvite: ({ name }) =>
       `👋 *${name}* ne aapko apni Forward-It family list mein joda hai. Shared kaamon ke reminder aapko bhi milenge.\n*LIST* bhejo dekhne ke liye, ya *LEAVE* bhejo band karne ke liye.`,
     shareSandboxNote: () => "_(Test number par unhe pehle is number par sandbox ka join code bhejna hoga, warna message nahi milenge.)_",
+    shareMetaNote: () => "_(Test number par unka number Meta app ki allowed list mein hona chahiye, aur unhe is number par ek baar koi message bhejna hoga.)_",
+    unsupportedMessage: () => "🙂 Main text, photo, PDF aur voice note padh sakti hoon. Sticker, video aur location se reminder abhi nahi bana sakti.",
     shareSelf: () => "Yeh to aapka hi number hai 🙂 *SHARE* ke baad family member ka number bhejo.",
     familyList: ({ names }) => `👨‍👩‍👧 *Aapki family list:* ${names}`,
     familyAlone: () => "👤 Abhi sirf aap ho. Family member jodne ke liye *SHARE +91XXXXXXXXXX* bhejo.",
@@ -164,6 +168,8 @@ const STRINGS = {
     shareInvite: ({ name }) =>
       `👋 *${name}* ने आपको अपनी Forward-It परिवार लिस्ट में जोड़ा है। साझा कामों के रिमाइंडर आपको भी मिलेंगे।\nदेखने के लिए *LIST* भेजें, या बंद करने के लिए *LEAVE*।`,
     shareSandboxNote: () => "_(टेस्ट नंबर पर उन्हें पहले इस नंबर पर सैंडबॉक्स का join कोड भेजना होगा, वरना मैसेज नहीं मिलेंगे।)_",
+    shareMetaNote: () => "_(टेस्ट नंबर पर उनका नंबर Meta ऐप की allowed list में होना चाहिए, और उन्हें इस नंबर पर एक बार कोई भी मैसेज भेजना होगा।)_",
+    unsupportedMessage: () => "🙂 मैं टेक्स्ट, फोटो, PDF और वॉइस नोट पढ़ सकती हूँ। स्टिकर, वीडियो और लोकेशन से अभी रिमाइंडर नहीं बना सकती।",
     shareSelf: () => "यह तो आपका ही नंबर है 🙂 *SHARE* के बाद परिवार के सदस्य का नंबर भेजें।",
     familyList: ({ names }) => `👨‍👩‍👧 *आपकी परिवार लिस्ट:* ${names}`,
     familyAlone: () => "👤 अभी सिर्फ़ आप हैं। परिवार के सदस्य को जोड़ने के लिए *SHARE +91XXXXXXXXXX* भेजें।",

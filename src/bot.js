@@ -60,7 +60,9 @@ export function shareWith(user, partnerId) {
   store.joinHousehold(partner.id, user.id);
   notify(partner.id, t(langOf(partner), "shareInvite", { name: displayName(user, langOf(partner)) }));
   const reply = t(lang, "shareAdded", { name: displayName(partner, lang) });
-  return user.id.startsWith("whatsapp:") ? `${reply}\n${t(lang, "shareSandboxNote")}` : reply;
+  if (user.id.startsWith("whatsapp:")) return `${reply}\n${t(lang, "shareSandboxNote")}`;
+  if (user.id.startsWith("meta:")) return `${reply}\n${t(lang, "shareMetaNote")}`;
+  return reply;
 }
 
 /** Mark a task done and tell the rest of the family who did it. */
@@ -83,10 +85,12 @@ export function completeTask(user, task, now = nowLocal()) {
 /**
  * Handle one incoming message and return the replies to send, in order.
  * media: [{ contentType, data }] with data as base64 (images, PDFs, voice notes).
+ * profileName: the sender's WhatsApp name, used for family messages unless they set one with NAME.
  */
-export async function handleIncoming({ userId, text = "", media = [], now = nowLocal() }) {
+export async function handleIncoming({ userId, text = "", media = [], now = nowLocal(), profileName = null }) {
   const isNew = store.isNewUser(userId);
   const user = store.getUser(userId);
+  if (profileName && !user.name) user.name = profileName.trim().slice(0, 30);
   text = text.trim();
   if (!user.detectedLang && text) user.detectedLang = detectLanguage(text);
 

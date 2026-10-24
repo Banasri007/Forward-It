@@ -125,6 +125,30 @@ Twilio can also push each message to the server the moment it arrives. That need
 2. Put the tunnel's `https://…` address (or your Render URL) in `PUBLIC_URL` in `.env` (no slash at the end) and restart. Setting `PUBLIC_URL` switches to webhook mode; you can also force a mode with `WHATSAPP_MODE=poll`, `WHATSAPP_MODE=webhook` or `WHATSAPP_MODE=off`.
 3. In the sandbox settings, set **When a message comes in** to `https://…/webhooks/twilio` (method `POST`).
 
+## Real two-way WhatsApp with Meta's Cloud API (free)
+
+Twilio's trial number can't send Forward-It's own replies (see Limitations). Meta's WhatsApp Cloud API can: its free **test number** allows normal text replies within 24 hours of the user's last message, which is exactly forward → reply. Meta delivers incoming messages to a webhook, so this needs a public HTTPS URL. Deploy to Render first (next section), then:
+
+1. **Meta developer account:** go to [developers.facebook.com](https://developers.facebook.com), log in with Facebook and register as a developer (it asks you to verify your phone or email).
+2. **Create an app:** **My Apps → Create app**, choose the use case **"Connect with customers through WhatsApp"**, pick or create a business portfolio, and create the app.
+3. **API Setup** (WhatsApp → API Setup, or Use cases → Customize):
+   - Click **Generate access token** → `META_ACCESS_TOKEN`. This token expires within hours. For judging, make a long-lived one: Business settings → **System users** → Add (Admin) → **Assign assets** (your app, full control) → **Generate token** with `whatsapp_business_messaging`, `whatsapp_business_management` and `business_management`.
+   - Copy the **Phone number ID** (a long number under the test number, not the phone number itself) → `META_PHONE_NUMBER_ID`.
+   - Copy the test number itself (e.g. `+1 555 …`) → `META_DISPLAY_NUMBER`.
+   - In the **To** field, **add your own WhatsApp number** and confirm the code WhatsApp sends you. A test number only replies to numbers on this list, so add family members and any judges here too.
+4. **App secret:** App settings → Basic → **App secret** → Show → `META_APP_SECRET`.
+5. **Verify token:** make up any phrase (e.g. `forward-it-2026-xyz`) → `META_VERIFY_TOKEN`.
+6. **Add all five `META_*` values in Render** (Environment tab) and redeploy. The deploy log prints `WhatsApp (Meta): on - set Meta's callback URL to https://…/webhooks/meta`.
+7. **Webhook** (WhatsApp → Configuration): Callback URL `https://<your-app>.onrender.com/webhooks/meta`, Verify token = your phrase → **Verify and save**. Then under **Webhook fields**, **Subscribe** to `messages`.
+8. **Test:** from your phone, send "hi" to the test number. Then forward a circular, a photo, a PDF or a voice note.
+
+Notes:
+- Replies are free text only within **24 hours of the person's last message**. A reminder due later than that can't be delivered until they message again; production would use an approved template.
+- **Family sharing works the same way:** `SHARE +91…`. On the test number, the family member must be on the **To** list and should send the number any message once.
+- **A 👍 reaction** on a reminder counts as "done", the same as replying 👍.
+- You can switch Twilio off (`WHATSAPP_MODE=off`) once Meta works; the website's **Try on WhatsApp** button then shows your Meta number.
+- Keep the UptimeRobot ping running so Render doesn't sleep. Meta retries webhooks, but a sleeping server answers slowly.
+
 ## Deploy with a permanent URL (free, for judges)
 
 Polling mode means WhatsApp needs no public URL, so deploying is only about putting the **website** online at an address that never changes. The repo includes a `render.yaml` for [Render](https://render.com)'s free plan.
@@ -171,6 +195,7 @@ Outgoing:  scheduler.js (every 15 s) ─► due reminders + morning summary ─�
 | `src/insights.js` | The Impact numbers, counted from real activity |
 | `src/i18n.js` | Every bot message in English, Hinglish and Hindi |
 | `src/channels/twilio-poll.js` | Polling mode: asks Twilio for new WhatsApp messages every few seconds |
+| `src/channels/meta.js` | Meta WhatsApp Cloud API: signed webhook, media download, replies, 👍 reactions |
 | `src/channels/twilio.js` | Handles each WhatsApp message once, sends replies, optional signature-checked webhook |
 | `src/channels/simulator.js` | Local simulator API, live updates over Server-Sent Events |
 | `public/index.html`, `public/styles.css` | The website: hero, how it works, live demo, features (light and dark) |
@@ -187,6 +212,8 @@ npm test
 
 ## Limitations (honest list)
 
+- **Twilio's trial "Try out WhatsApp" number can't send Forward-It's replies.** Newer trial accounts get a test number (e.g. +1 737 250 8034) that only sends Twilio's own template messages ([Twilio docs](https://www.twilio.com/docs/usage/trials/try-out-whatsapp)), so Twilio rejects the bot's replies with error 21654. Use **Meta's WhatsApp Cloud API** for real two-way WhatsApp (see above), or an upgraded Twilio account with a registered sender.
+- **Meta's test number** only replies to up to a handful of numbers you add in the Meta app, and only within 24 hours of each person's last message.
 - **WhatsApp's 24-hour rule:** WhatsApp only lets a business send free-form messages within 24 hours of the user's last message. A reminder due later than that needs a pre-approved message template, which requires a production WhatsApp Business sender. In the sandbox, reminders work while the conversation window is open. The sandbox connection also expires after a while; re-send the join code if messages stop.
 - **Voice notes** are transcribed by Groq's Whisper, so they need `GROQ_API_KEY` (even if you use Claude for reading). Without it, the bot asks you to type instead.
 - **The offline parser** reads typed text and text PDFs but not photos, and its titles are the original sentence, not a rewritten summary.
@@ -213,6 +240,6 @@ npm test
 - Built for the TaskForge hackathon.
 - Libraries: [Express](https://expressjs.com), [chrono-node](https://github.com/wanasit/chrono) (date parsing), [Luxon](https://moment.github.io/luxon/) (time zones), [unpdf](https://github.com/unjs/unpdf) (PDF text), [node-qrcode](https://github.com/soldair/node-qrcode) (QR code), [Anthropic SDK](https://github.com/anthropics/anthropic-sdk-typescript). Fonts: Instrument Serif and Inter (Google Fonts).
 - The sample voice note was generated with Windows' built-in text-to-speech voice.
-- AI services: [Groq](https://groq.com) (`openai/gpt-oss-120b`, `qwen/qwen3.8-27b`) reads forwarded messages at runtime; Claude is an optional alternative.
+- AI services: [Groq](https://groq.com) (`openai/gpt-oss-120b`, `qwen/qwen3.8-27b`, Whisper) reads forwarded messages at runtime; Claude is an optional alternative. WhatsApp via Meta's Cloud API and Twilio.
 - AI assistance: the code was written with the help of Claude Code (Anthropic).
 - The school circular, bill, appointment, society notice PDF and notice photo in the simulator are made-up samples. They are not real institutions or people.

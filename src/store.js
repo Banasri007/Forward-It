@@ -9,10 +9,11 @@ import { config } from "./config.js";
 
 const inMemory = config.dataFile === ":memory:";
 const SIM_LOG_LIMIT = 300;
-const TWILIO_SEEN_LIMIT = 1000;
+const SEEN_LIMIT = 2000;
 
-// twilioSeen: SIDs of WhatsApp messages already handled, so none is answered twice.
-const emptyDb = () => ({ users: {}, households: {}, tasks: [], nextTaskId: 1, simLog: {}, twilioSeen: [] });
+// seenMessages: IDs of WhatsApp messages already handled (Twilio SIDs, Meta wamids),
+// so a message delivered twice is answered once.
+const emptyDb = () => ({ users: {}, households: {}, tasks: [], nextTaskId: 1, simLog: {}, seenMessages: [] });
 const emptyStats = () => ({ forwards: 0, noise: 0, reminders: 0, voiceNotes: 0 });
 
 let db = load();
@@ -41,6 +42,10 @@ function migrate(data) {
   for (const task of data.tasks) {
     task.createdBy ??= task.userId;
     task.householdId ??= data.users[task.userId]?.householdId ?? `h:${task.userId}`;
+  }
+  if (data.twilioSeen) {
+    data.seenMessages = [...data.seenMessages, ...data.twilioSeen];
+    delete data.twilioSeen;
   }
   return data;
 }
@@ -203,13 +208,13 @@ export function allActiveTasks() {
 
 /* ---------- Channel bookkeeping ---------- */
 
-export function seenTwilioMessage(sid) {
-  return db.twilioSeen.includes(sid);
+export function seenMessage(id) {
+  return db.seenMessages.includes(id);
 }
 
-export function markTwilioMessage(sid) {
-  db.twilioSeen.push(sid);
-  if (db.twilioSeen.length > TWILIO_SEEN_LIMIT) db.twilioSeen.splice(0, db.twilioSeen.length - TWILIO_SEEN_LIMIT);
+export function markMessage(id) {
+  db.seenMessages.push(id);
+  if (db.seenMessages.length > SEEN_LIMIT) db.seenMessages.splice(0, db.seenMessages.length - SEEN_LIMIT);
   save();
 }
 

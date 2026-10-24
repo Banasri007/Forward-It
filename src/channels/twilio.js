@@ -84,6 +84,13 @@ async function sendWhatsApp(to, text) {
     });
     if (!res.ok) {
       const detail = await res.text();
+      if (detail.includes('"code":21654')) {
+        // Twilio's trial "Try out WhatsApp" number only sends Twilio's own template messages.
+        throw new Error(
+          "Twilio's trial WhatsApp number only allows Twilio's template messages, so Forward-It can't send its own replies. " +
+            "Use the website demo, or connect a full WhatsApp sender (see README > Limitations).",
+        );
+      }
       throw new Error(`Twilio send failed (HTTP ${res.status}): ${detail.slice(0, 300)}`);
     }
   }
@@ -98,8 +105,8 @@ registerChannel("whatsapp:", sendWhatsApp);
  */
 export async function handleWhatsAppMessage({ sid, from, body = "", media = [] }) {
   if (sid) {
-    if (store.seenTwilioMessage(sid)) return;
-    store.markTwilioMessage(sid);
+    if (store.seenMessage(sid)) return;
+    store.markMessage(sid);
   }
   if (!media.length && SANDBOX_COMMAND.test(body.trim())) return;
 
@@ -112,7 +119,7 @@ export async function handleWhatsAppMessage({ sid, from, body = "", media = [] }
     const replies = await handleIncoming({ userId: from, text: body, media: files });
     for (const reply of replies) await send(from, reply);
   } catch (err) {
-    console.error(`[twilio] Failed to handle message from ${from}:`, err);
+    console.error(`[twilio] Failed to handle message from ${from}: ${err.message}`);
     await send(from, t(langOf(store.getUser(from)), "error")).catch(() => {});
   }
 }

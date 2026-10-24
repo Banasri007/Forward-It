@@ -3,7 +3,7 @@
 import express from "express";
 import { DateTime } from "luxon";
 import QRCode from "qrcode";
-import { aiDescription, config, whatsappMode } from "../config.js";
+import { aiDescription, config, metaConfigured, whatsappMode } from "../config.js";
 import { completeTask, displayName, handleIncoming, langOf, settleNotices, shareWith } from "../bot.js";
 import { registerChannel, send } from "../outbox.js";
 import * as store from "../store.js";
@@ -45,11 +45,17 @@ function parseDataUrl(dataUrl) {
   return match ? { contentType: match[1], data: match[2] } : null;
 }
 
-function waLink() {
+// Which WhatsApp number visitors should message: Meta's (real two-way replies) when set up, else Twilio's.
+function whatsappContact() {
+  if (metaConfigured && config.meta.displayNumber) {
+    const number = config.meta.displayNumber.replace(/\D/g, "");
+    return { provider: "meta", number: `+${number}`, joinCode: null, link: `https://wa.me/${number}?text=${encodeURIComponent("Hi")}` };
+  }
   const number = config.twilio.from.replace(/\D/g, "");
   const code = config.twilio.sandboxCode;
-  return `https://wa.me/${number}${code ? `?text=${encodeURIComponent(code)}` : ""}`;
+  return { provider: "twilio", number: `+${number}`, joinCode: code || null, link: `https://wa.me/${number}${code ? `?text=${encodeURIComponent(code)}` : ""}` };
 }
+const waLink = () => whatsappContact().link;
 
 function taskView(task, viewerId) {
   const creator = store.getUser(task.createdBy);
@@ -65,15 +71,16 @@ export function simulatorRouter() {
   const router = express.Router();
 
   router.get("/status", (req, res) => {
-    // Webhook mode only works once Twilio can reach this server at a public URL.
-    const whatsapp = whatsappMode === "webhook" && !config.twilio.publicUrl ? "no-url" : whatsappMode;
+    // Meta takes priority; Twilio webhook mode only works once Twilio can reach this server.
+    const twilio = whatsappMode === "webhook" && !config.twilio.publicUrl ? "no-url" : whatsappMode;
+    const whatsapp = metaConfigured ? "meta" : twilio;
     res.json({
       ai: config.ai.provider,
       aiDetail: aiDescription(),
       voice: config.ai.voice,
       whatsapp,
       timezone: config.timezone,
-      sandbox: { number: config.twilio.from.replace(/^whatsapp:/, ""), joinCode: config.twilio.sandboxCode || null, link: waLink() },
+      sandbox: whatsappContact(),
     });
   });
 

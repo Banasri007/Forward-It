@@ -17,6 +17,18 @@ services:
         value: Asia/Kolkata
       - key: GROQ_API_KEY
         sync: false
+      # Meta WhatsApp Cloud API (real two-way WhatsApp). See README.
+      - key: META_ACCESS_TOKEN
+        sync: false
+      - key: META_PHONE_NUMBER_ID
+        sync: false
+      - key: META_APP_SECRET
+        sync: false
+      - key: META_VERIFY_TOKEN
+        sync: false
+      - key: META_DISPLAY_NUMBER
+        sync: false
+      # Twilio: optional once Meta works; set WHATSAPP_MODE=off to switch it off.
       - key: TWILIO_ACCOUNT_SID
         sync: false
       - key: TWILIO_AUTH_TOKEN

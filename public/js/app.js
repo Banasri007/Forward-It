@@ -49,25 +49,33 @@ $("#theme-toggle").addEventListener("click", () => setTheme(currentTheme() === "
 
 function renderStatus(status) {
   const ai = status.ai ? `AI · ${status.ai === "groq" ? "Groq" : "Claude"}` : "Offline parser";
-  const wa = { poll: "WhatsApp · live", webhook: "WhatsApp · live", "no-url": "WhatsApp · needs URL", off: "WhatsApp · off" }[status.whatsapp];
+  const wa = { meta: "WhatsApp · live", poll: "WhatsApp · live", webhook: "WhatsApp · live", "no-url": "WhatsApp · needs URL", off: "WhatsApp · off" }[status.whatsapp];
   $("#status").innerHTML = `
     <span class="pill ${status.ai ? "on" : ""}" title="${status.aiDetail ?? "No AI key: typed text and PDFs only"}"><i></i>${ai}</span>
-    <span class="pill ${["poll", "webhook"].includes(status.whatsapp) ? "on" : ""}"><i></i>${wa}</span>`;
+    <span class="pill ${["meta", "poll", "webhook"].includes(status.whatsapp) ? "on" : ""}"><i></i>${wa}</span>`;
 }
 
 function renderWhatsAppDialog(status) {
-  const live = ["poll", "webhook"].includes(status.whatsapp);
-  const { number, joinCode, link } = status.sandbox;
+  const live = ["meta", "poll", "webhook"].includes(status.whatsapp);
+  const { provider, number, joinCode, link } = status.sandbox;
+  const connectStep =
+    provider === "meta"
+      ? `<li><strong>Say hi.</strong> Forward-It replies with what it can do.</li>`
+      : `<li><strong>Send ${joinCode ? `<code>${joinCode}</code>` : "your sandbox's join code"}</strong> to connect to the test number${joinCode ? "" : " (it's on your Twilio sandbox page)"}.</li>`;
+  const note =
+    provider === "meta"
+      ? "This hackathon prototype runs on a WhatsApp test number, which only replies to numbers on its allowed list. Ask the team to add yours."
+      : "This is a hackathon prototype on Twilio's WhatsApp test number. Only send things you're happy to share.";
   $("#wa-body").innerHTML = live
     ? `<div class="wa-grid">
         <div class="wa-qr"><img src="/api/sim/whatsapp-qr.svg" alt="QR code that opens WhatsApp to message Forward-It" width="168" height="168" /><span>Scan with your phone camera</span></div>
         <ol class="wa-steps">
           <li><strong>Open WhatsApp</strong> by scanning the code, or message <a href="${link}" target="_blank" rel="noopener">${number}</a>.</li>
-          <li><strong>Send ${joinCode ? `<code>${joinCode}</code>` : "your sandbox's join code"}</strong> to connect to the test number${joinCode ? "" : " (it's on your Twilio sandbox page)"}.</li>
+          ${connectStep}
           <li><strong>Forward anything:</strong> a notice, a bill, a photo, a PDF or a voice note. Replies arrive in a few seconds.</li>
         </ol>
       </div>
-      <p class="wa-note">${icon("shield", 15)} This is a hackathon prototype on Twilio's WhatsApp test number. Only send things you're happy to share.</p>`
+      <p class="wa-note">${icon("shield", 15)} ${note}</p>`
     : `<p>WhatsApp isn't connected on this server yet. Add your Twilio keys to <code>.env</code> and restart. The README walks through it in five steps.</p>
        <p class="wa-note">Meanwhile, everything in the live demo runs on the same bot.</p>`;
 }
