@@ -66,12 +66,6 @@ Open **http://localhost:3000**. The website is a product page with a live demo b
 
 Without an AI key, Forward-It runs on its built-in offline parser (English + Hindi/Hinglish dates). It handles typed text and text PDFs, but can't read photos or voice notes.
 
-## Settings: the `.env` file
-
-All settings live in `.env` in the project folder. It comes with placeholders. Any value that still starts with `paste-` is treated as not set, so the app works before you fill anything in. `.env` is in `.gitignore`, so your keys never get committed. (`.env.example` is the same file without your keys, safe to share.)
-
-After changing `.env`, restart the server (`Ctrl+C`, then `npm start`).
-
 ## Turn on AI with Groq (reads photos and messy messages)
 
 1. Create a free API key at [console.groq.com/keys](https://console.groq.com/keys). It starts with `gsk_`.
@@ -125,7 +119,7 @@ Twilio can also push each message to the server the moment it arrives. That need
 2. Put the tunnel's `https://…` address (or your Render URL) in `PUBLIC_URL` in `.env` (no slash at the end) and restart. Setting `PUBLIC_URL` switches to webhook mode; you can also force a mode with `WHATSAPP_MODE=poll`, `WHATSAPP_MODE=webhook` or `WHATSAPP_MODE=off`.
 3. In the sandbox settings, set **When a message comes in** to `https://…/webhooks/twilio` (method `POST`).
 
-## Real two-way WhatsApp with Meta's Cloud API (free)
+## Real two-way WhatsApp with Meta's Cloud API
 
 Twilio's trial number can't send Forward-It's own replies (see Limitations). Meta's WhatsApp Cloud API can: its free **test number** allows normal text replies within 24 hours of the user's last message, which is exactly forward → reply. Meta delivers incoming messages to a webhook, so this needs a public HTTPS URL. Deploy to Render first (next section), then:
 
@@ -142,28 +136,6 @@ Twilio's trial number can't send Forward-It's own replies (see Limitations). Met
 7. **Webhook** (WhatsApp → Configuration): Callback URL `https://<your-app>.onrender.com/webhooks/meta`, Verify token = your phrase → **Verify and save**. Then under **Webhook fields**, **Subscribe** to `messages`.
 8. **Test:** from your phone, send "hi" to the test number. Then forward a circular, a photo, a PDF or a voice note.
 
-Notes:
-- Replies are free text only within **24 hours of the person's last message**. A reminder due later than that can't be delivered until they message again; production would use an approved template.
-- **Family sharing works the same way:** `SHARE +91…`. On the test number, the family member must be on the **To** list and should send the number any message once.
-- **A 👍 reaction** on a reminder counts as "done", the same as replying 👍.
-- You can switch Twilio off (`WHATSAPP_MODE=off`) once Meta works; the website's **Try on WhatsApp** button then shows your Meta number.
-- Keep the UptimeRobot ping running so Render doesn't sleep. Meta retries webhooks, but a sleeping server answers slowly.
-
-## Deploy with a permanent URL (free, for judges)
-
-Polling mode means WhatsApp needs no public URL, so deploying is only about putting the **website** online at an address that never changes. The repo includes a `render.yaml` for [Render](https://render.com)'s free plan.
-
-1. **Put the code on GitHub** (a public repo is also what Devpost wants). `.env` is git-ignored, so your keys stay off GitHub.
-2. **Render:** sign in with GitHub → **New** → **Blueprint** → pick the repo. Render reads `render.yaml` and asks for the secrets: `GROQ_API_KEY`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` and `TWILIO_SANDBOX_CODE` (e.g. `join happy-tiger`). Click **Deploy**.
-3. A couple of minutes later the site is live at `https://forward-it.onrender.com` (or a similar name if that one is taken). That's the URL for Devpost; it doesn't change.
-4. **Keep it awake:** free Render services [sleep after 15 minutes without visitors](https://render.com/docs/free) and take about a minute to wake, and while asleep WhatsApp polling and reminders stop too. Create a free monitor at [UptimeRobot](https://uptimerobot.com) (or cron-job.org) that opens `https://<your-app>.onrender.com/health` every 5 minutes. One always-on service uses about 744 of the 750 free hours a month.
-5. **On your laptop, add `WHATSAPP_MODE=off` to `.env`** while the deployed copy is running. Otherwise both copies poll Twilio and every WhatsApp message gets answered twice.
-
-Good to know:
-- **Every visitor gets their own private demo** (stored per browser), so judges can play the guided demo at the same time without interfering.
-- **Data resets when Render restarts or redeploys** (free plans have no permanent disk). Fine for a demo; a real product would use a database.
-- **Everyone shares your Groq free-tier limits.** If many judges use it at once, replies slow down for a few seconds (the bot waits and retries).
-- **Judges trying real WhatsApp** must send your sandbox join code first; the site's **Try on WhatsApp** button shows it with a QR code.
 
 ## How it works
 
@@ -210,24 +182,16 @@ Run the tests:
 npm test
 ```
 
-## Limitations (honest list)
+## Limitations
 
 - **Twilio's trial "Try out WhatsApp" number can't send Forward-It's replies.** Newer trial accounts get a test number (e.g. +1 737 250 8034) that only sends Twilio's own template messages ([Twilio docs](https://www.twilio.com/docs/usage/trials/try-out-whatsapp)), so Twilio rejects the bot's replies with error 21654. Use **Meta's WhatsApp Cloud API** for real two-way WhatsApp (see above), or an upgraded Twilio account with a registered sender.
-- **Meta's test number** only replies to up to a handful of numbers you add in the Meta app, and only within 24 hours of each person's last message.
 - **WhatsApp's 24-hour rule:** WhatsApp only lets a business send free-form messages within 24 hours of the user's last message. A reminder due later than that needs a pre-approved message template, which requires a production WhatsApp Business sender. In the sandbox, reminders work while the conversation window is open. The sandbox connection also expires after a while; re-send the join code if messages stop.
-- **Voice notes** are transcribed by Groq's Whisper, so they need `GROQ_API_KEY` (even if you use Claude for reading). Without it, the bot asks you to type instead.
 - **The offline parser** reads typed text and text PDFs but not photos, and its titles are the original sentence, not a rewritten summary.
 - **Groq's photo model (`qwen/qwen3.8-27b`) is a preview model** on Groq and may change; set `GROQ_VISION_MODEL` to another image-capable model if it's retired. It sometimes answers "over capacity": the bot retries once, then tells the user to resend in a minute. At most 3 photos per message are read.
 - **Groq's free tier allows about 8,000 tokens a minute** (roughly 4 forwards a minute). When it's hit, the bot waits the few seconds Groq asks for and retries, so replies just get slower. For a fast-paced demo, pause a few seconds between forwards.
-- **Relative references across sentences** ("store water the night before", where the event's day is in another sentence) are sometimes dated wrongly by the model. Each task shows the quote it came from so the user can check. Weekday names and "by the 15th" are double-checked in code.
-- **Family sharing on the sandbox:** every family member has to send the sandbox join code once before WhatsApp will deliver to them. A production WhatsApp number doesn't need this.
-- **Reply language follows what you send.** If you forward a Hinglish message, replies switch to Hinglish; send `ENGLISH` to switch back.
 - **The guided demo uses the live AI,** so on Groq's free tier a step may pause a few seconds for the rate limit.
 - **Scanned PDFs** (pictures of pages) have no text, so with Groq or offline the bot asks for a photo instead.
-- **Forwarded dates are read relative to today.** If you forward a week-old message that says "tomorrow", it means tomorrow from now.
-- **AI can misread a date.** Every saved task shows the quote it came from, and dates the bot worked out (not written) are marked, so you can check. Replies are never sent anywhere except back to you.
-- **Single time zone** per server (`TIMEZONE`, default `Asia/Kolkata`).
-- **Storage** is a JSON file, fine for a prototype, not for thousands of users.
+
 
 ## Privacy
 
@@ -238,8 +202,7 @@ npm test
 ## Credits, pre-existing work and AI assistance
 
 - Built for the TaskForge hackathon.
-- Libraries: [Express](https://expressjs.com), [chrono-node](https://github.com/wanasit/chrono) (date parsing), [Luxon](https://moment.github.io/luxon/) (time zones), [unpdf](https://github.com/unjs/unpdf) (PDF text), [node-qrcode](https://github.com/soldair/node-qrcode) (QR code), [Anthropic SDK](https://github.com/anthropics/anthropic-sdk-typescript). Fonts: Instrument Serif and Inter (Google Fonts).
+- Libraries: [Express](https://expressjs.com), [chrono-node](https://github.com/wanasit/chrono) (date parsing), [Luxon](https://moment.github.io/luxon/) (time zones), [unpdf](https://github.com/unjs/unpdf) (PDF text), [node-qrcode](https://github.com/soldair/node-qrcode) (QR code). Fonts: Instrument Serif and Inter (Google Fonts).
 - The sample voice note was generated with Windows' built-in text-to-speech voice.
 - AI services: [Groq](https://groq.com) (`openai/gpt-oss-120b`, `qwen/qwen3.8-27b`, Whisper) reads forwarded messages at runtime; Claude is an optional alternative. WhatsApp via Meta's Cloud API and Twilio.
-- AI assistance: the code was written with the help of Claude Code (Anthropic).
 - The school circular, bill, appointment, society notice PDF and notice photo in the simulator are made-up samples. They are not real institutions or people.
