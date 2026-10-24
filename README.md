@@ -66,12 +66,6 @@ Open **http://localhost:3000**. The website is a product page with a live demo b
 
 Without an AI key, Forward-It runs on its built-in offline parser (English + Hindi/Hinglish dates). It handles typed text and text PDFs, but can't read photos or voice notes.
 
-## Settings: the `.env` file
-
-All settings live in `.env` in the project folder. It comes with placeholders. Any value that still starts with `paste-` is treated as not set, so the app works before you fill anything in. `.env` is in `.gitignore`, so your keys never get committed. (`.env.example` is the same file without your keys, safe to share.)
-
-After changing `.env`, restart the server (`Ctrl+C`, then `npm start`).
-
 ## Turn on AI with Groq (reads photos and messy messages)
 
 1. Create a free API key at [console.groq.com/keys](https://console.groq.com/keys). It starts with `gsk_`.
@@ -92,8 +86,6 @@ Forward-It uses two Groq models, and you can change both in `.env`:
 Each request asks Groq for strict JSON that matches a schema, so every answer has the same shape, and the app validates it again before using it. If a model rejects strict mode, it retries once in plain JSON mode. If Groq is down, rate-limited or the key is wrong, the bot falls back to the offline parser instead of going silent (the server log says why).
 
 PDFs are turned into text on your machine first (Groq can't open PDF files), so only the text is sent. A scanned PDF has no text, and the bot asks for a photo instead.
-
-**Claude instead of Groq (optional):** set `ANTHROPIC_API_KEY` in `.env` (see `.env.example`). If both keys are set, Groq wins unless you add `AI_PROVIDER=claude`. Claude reads PDFs directly.
 
 ## Connect real WhatsApp (Twilio Sandbox, free)
 
@@ -124,22 +116,6 @@ Twilio can also push each message to the server the moment it arrives. That need
 1. Expose port 3000 with a tunnel: [`cloudflared`](https://github.com/cloudflare/cloudflared) (`cloudflared tunnel --url http://localhost:3000`, no account) or [ngrok](https://ngrok.com) (free account, fixed address).
 2. Put the tunnel's `https://…` address (or your Render URL) in `PUBLIC_URL` in `.env` (no slash at the end) and restart. Setting `PUBLIC_URL` switches to webhook mode; you can also force a mode with `WHATSAPP_MODE=poll`, `WHATSAPP_MODE=webhook` or `WHATSAPP_MODE=off`.
 3. In the sandbox settings, set **When a message comes in** to `https://…/webhooks/twilio` (method `POST`).
-
-## Deploy with a permanent URL (free, for judges)
-
-Polling mode means WhatsApp needs no public URL, so deploying is only about putting the **website** online at an address that never changes. The repo includes a `render.yaml` for [Render](https://render.com)'s free plan.
-
-1. **Put the code on GitHub** (a public repo is also what Devpost wants). `.env` is git-ignored, so your keys stay off GitHub.
-2. **Render:** sign in with GitHub → **New** → **Blueprint** → pick the repo. Render reads `render.yaml` and asks for the secrets: `GROQ_API_KEY`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` and `TWILIO_SANDBOX_CODE` (e.g. `join happy-tiger`). Click **Deploy**.
-3. A couple of minutes later the site is live at `https://forward-it.onrender.com` (or a similar name if that one is taken). That's the URL for Devpost; it doesn't change.
-4. **Keep it awake:** free Render services [sleep after 15 minutes without visitors](https://render.com/docs/free) and take about a minute to wake, and while asleep WhatsApp polling and reminders stop too. Create a free monitor at [UptimeRobot](https://uptimerobot.com) (or cron-job.org) that opens `https://<your-app>.onrender.com/health` every 5 minutes. One always-on service uses about 744 of the 750 free hours a month.
-5. **On your laptop, add `WHATSAPP_MODE=off` to `.env`** while the deployed copy is running. Otherwise both copies poll Twilio and every WhatsApp message gets answered twice.
-
-Good to know:
-- **Every visitor gets their own private demo** (stored per browser), so judges can play the guided demo at the same time without interfering.
-- **Data resets when Render restarts or redeploys** (free plans have no permanent disk). Fine for a demo; a real product would use a database.
-- **Everyone shares your Groq free-tier limits.** If many judges use it at once, replies slow down for a few seconds (the bot waits and retries).
-- **Judges trying real WhatsApp** must send your sandbox join code first; the site's **Try on WhatsApp** button shows it with a QR code.
 
 ## How it works
 
@@ -211,8 +187,7 @@ npm test
 ## Credits, pre-existing work and AI assistance
 
 - Built for the TaskForge hackathon.
-- Libraries: [Express](https://expressjs.com), [chrono-node](https://github.com/wanasit/chrono) (date parsing), [Luxon](https://moment.github.io/luxon/) (time zones), [unpdf](https://github.com/unjs/unpdf) (PDF text), [node-qrcode](https://github.com/soldair/node-qrcode) (QR code), [Anthropic SDK](https://github.com/anthropics/anthropic-sdk-typescript). Fonts: Instrument Serif and Inter (Google Fonts).
+- Libraries: [Express](https://expressjs.com), [chrono-node](https://github.com/wanasit/chrono) (date parsing), [Luxon](https://moment.github.io/luxon/) (time zones), [unpdf](https://github.com/unjs/unpdf) (PDF text), [node-qrcode](https://github.com/soldair/node-qrcode) (QR code), (https://github.com/anthropics/anthropic-sdk-typescript). Fonts: Instrument Serif and Inter (Google Fonts).
 - The sample voice note was generated with Windows' built-in text-to-speech voice.
 - AI services: [Groq](https://groq.com) (`openai/gpt-oss-120b`, `qwen/qwen3.8-27b`) reads forwarded messages at runtime; Claude is an optional alternative.
-- AI assistance: the code was written with the help of Claude Code (Anthropic).
 - The school circular, bill, appointment, society notice PDF and notice photo in the simulator are made-up samples. They are not real institutions or people.
