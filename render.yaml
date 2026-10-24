@@ -21,7 +21,8 @@ services:
         sync: false
       - key: TWILIO_AUTH_TOKEN
         sync: false
+      # Your test number from Twilio's "Try out WhatsApp" page (newer accounts: +1 737 250 8034).
       - key: TWILIO_WHATSAPP_FROM
-        value: whatsapp:+14155238886
+        value: whatsapp:+17372508034
       - key: TWILIO_SANDBOX_CODE
         sync: false

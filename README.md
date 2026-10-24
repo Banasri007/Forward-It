@@ -100,18 +100,20 @@ PDFs are turned into text on your machine first (Groq can't open PDF files), so 
 No tunnel, public URL or webhook needed: the server checks Twilio for new messages every 3 seconds ("polling"), so it works on any network, including college or hostel Wi-Fi.
 
 1. Create a free [Twilio](https://www.twilio.com) account. In the Console, open **Messaging → Try it out → Send a WhatsApp message**.
-2. From your phone, send the shown `join <code>` message to the sandbox number (+1 415 523 8886). Twilio replies to confirm; Forward-It ignores this message.
+2. From your phone, send the shown `join <code>` message (e.g. `join twilio-trial`) to the test number on that page. Newer accounts get **+1 737 250 8034**, older ones +1 415 523 8886. Twilio replies to confirm; Forward-It ignores this message.
 3. In `.env`, replace the Twilio placeholders with your **Account SID** (starts with `AC`) and **Auth Token** from the Twilio Console's Account Info box:
    ```
    TWILIO_ACCOUNT_SID=AC...
    TWILIO_AUTH_TOKEN=...
-   TWILIO_WHATSAPP_FROM=whatsapp:+14155238886
+   TWILIO_WHATSAPP_FROM=whatsapp:+17372508034
+   TWILIO_SANDBOX_CODE=join twilio-trial
    ```
+   Use the number and join phrase from **your** Try-out page.
 4. Start (or restart) the server. The log should say `WhatsApp: on - checking Twilio for new messages every 3s`.
 5. Forward any message, photo, PDF or voice note to the sandbox number on WhatsApp. The reply arrives in a few seconds.
 6. Optional: put your sandbox's join phrase in `TWILIO_SANDBOX_CODE` (e.g. `join happy-tiger`). The website's **Try on WhatsApp** button then shows it with a QR code, so visitors and judges can try the bot from their own phones.
 
-If you get an extra reply in WhatsApp that isn't from Forward-It, open the sandbox settings, clear the **When a message comes in** box, and save. Polling doesn't use it.
+**Twilio's "Standard auto-reply":** on the newer Try-out page, Twilio answers every message with *"Standard auto-reply. You can send outbound messages…"* until you set your own webhook. To silence it without a public URL: in the Twilio Console search for **TwiML Bins**, create one containing just `<Response></Response>`, then paste that bin's URL as the incoming-message webhook on the Try-out page's **Receive a message** tab. Forward-It keeps answering through polling.
 
 After a restart, Forward-It still answers messages sent in the last 10 minutes, and never answers the same message twice.
 
